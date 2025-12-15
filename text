@@ -1,0 +1,15 @@
+<img width="928" height="88" alt="image" src="https://github.com/user-attachments/assets/26c1d7f7-faa1-4b59-9244-fe2df278c375" /># instagram
+ Project 3: Top Instagram Influencers data (cleaned)
+
+ 
+ Objective
+Analyze influencer engagement and popularity metrics.
+
+ Dataset Description
+Details of influencer data including followers, engagement rate, etc.
+
+Methodology
+Data cleaning, EDA, SQL queries, ML analysis.
+
+Results
+Engagement rate is more significant than follower count.
