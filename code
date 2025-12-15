@@ -1,0 +1,173 @@
+# ===============================
+# Top Instagram Influencers Data Analysis – Full Python Code (Robust Version)
+# Tools: Python, Pandas, NumPy, Matplotlib, Seaborn, Scikit-learn
+# ===============================
+
+"""
+IMPORTANT NOTE:
+This version fixes FileNotFoundError issues by:
+1. Using a RELATIVE path instead of an absolute Windows path
+2. Automatically checking whether the file exists
+3. Giving a clear error message if the file is missing
+
+EXPECTED BEHAVIOR:
+- Place the CSV file in the SAME folder as this notebook/script
+- Filename example: top_instagram_influencers_cleaned.csv
+"""
+
+# 1. Import libraries
+import os
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# 2. Load dataset (ROBUST & JUPYTER-FRIENDLY)
+# OPTION 1 (Recommended): Put the CSV file in the SAME folder as this notebook
+# OPTION 2: Provide the FULL path to the CSV file
+
+# ===== USER INPUT SECTION =====
+# 👉 If your file is NOT in the same folder, paste the FULL path below
+# Example:
+# file_path = r"C:/Users/Harshitha N/Downloads/top_instagram_influencers_cleaned.csv"
+
+file_path = "top_insta_influencers_data - top_insta_influencers_data.csv"  # default: same folder
+
+# ==============================
+
+if not os.path.exists(file_path):
+    print("\n❌ CSV file not found!")
+    print("Searched path:", os.path.abspath(file_path))
+    print("\n✅ FIX OPTIONS:")
+    print("1. Move the CSV file into the SAME folder as this notebook")
+    print("2. OR update 'file_path' with the full file location")
+    raise FileNotFoundError("Dataset file missing. Please fix the path and rerun.")
+
+df = pd.read_csv(file_path)
+
+# 3. Basic inspection
+print("Shape of dataset:", df.shape)
+print("\nColumns:\n", df.columns.tolist())
+print("\nFirst 5 rows:\n", df.head())
+print("\nDataset info:\n")
+print(df.info())
+print("\nMissing values:\n", df.isnull().sum())
+
+# 4. Data cleaning
+# Remove duplicate rows
+df = df.drop_duplicates().reset_index(drop=True)
+
+# Identify numeric and categorical columns
+numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+categorical_cols = df.select_dtypes(include=['object']).columns.tolist()
+
+# Fill missing numeric values with median
+for col in numeric_cols:
+    df[col] = df[col].fillna(df[col].median())
+
+# Fill missing categorical values
+for col in categorical_cols:
+    df[col] = df[col].fillna('Unknown')
+
+# 5. Descriptive statistics
+print("\nDescriptive statistics:\n")
+print(df.describe(include='all'))
+
+# 6. Exploratory Data Analysis (EDA)
+
+# Top 10 influencers by followers
+if 'followers' in df.columns and 'channel_info' in df.columns:
+    top_followers = df.sort_values(by='followers', ascending=False).head(10)
+    plt.figure()
+    plt.barh(top_followers['channel_info'], top_followers['followers'])
+    plt.xlabel('Followers')
+    plt.ylabel('Influencer')
+    plt.title('Top 10 Influencers by Followers')
+    plt.tight_layout()
+    plt.show()
+
+# Followers vs Average Likes
+if {'followers', 'avg_likes'}.issubset(df.columns):
+    plt.figure()
+    plt.scatter(df['followers'], df['avg_likes'])
+    plt.xlabel('Followers')
+    plt.ylabel('Average Likes')
+    plt.title('Followers vs Average Likes')
+    plt.tight_layout()
+    plt.show()
+
+# Engagement rate distribution
+if '60_day_eng_rate' in df.columns:
+    plt.figure()
+    plt.hist(df['60_day_eng_rate'], bins=20)
+    plt.xlabel('60 Day Engagement Rate')
+    plt.ylabel('Frequency')
+    plt.title('Engagement Rate Distribution')
+    plt.tight_layout()
+    plt.show()
+
+# 7. Correlation analysis
+if len(numeric_cols) > 1:
+    plt.figure()
+    correlation = df[numeric_cols].corr()
+    sns.heatmap(correlation)
+    plt.title('Correlation Heatmap')
+    plt.tight_layout()
+    plt.show()
+
+# 8. Simple Prediction Model
+# Predict Average Likes using Followers & Engagement Rate
+required_cols = {'followers', '60_day_eng_rate', 'avg_likes'}
+
+if required_cols.issubset(df.columns):
+    X = df[['followers', '60_day_eng_rate']]
+    y = df['avg_likes']
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, random_state=42
+    )
+
+    model = LinearRegression()
+    model.fit(X_train, y_train)
+
+    y_pred = model.predict(X_test)
+
+    print("\nModel Evaluation:")
+    print("MAE :", mean_absolute_error(y_test, y_pred))
+    print("MSE :", mean_squared_error(y_test, y_pred))
+    print("RMSE:", np.sqrt(mean_squared_error(y_test, y_pred)))
+    print("R²  :", r2_score(y_test, y_pred))
+
+    # Actual vs Predicted plot
+    plt.figure()
+    plt.scatter(y_test, y_pred)
+    plt.xlabel('Actual Average Likes')
+    plt.ylabel('Predicted Average Likes')
+    plt.title('Actual vs Predicted Average Likes')
+    plt.tight_layout()
+    plt.show()
+else:
+    print("\nPrediction skipped: Required columns not found.")
+
+# 9. Country-wise analysis
+if 'country' in df.columns:
+    country_counts = df['country'].value_counts().head(10)
+    plt.figure()
+    plt.bar(country_counts.index, country_counts.values)
+    plt.xlabel('Country')
+    plt.ylabel('Number of Influencers')
+    plt.title('Top 10 Countries by Influencers')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.show()
+
+# 10. Save cleaned dataset (relative path)
+output_file = "top_insta_influencers_data - top_insta_influencers_data.csv"
+df.to_csv(output_file, index=False)
+
+print("\nAnalysis completed successfully!")
+print(f"Cleaned file saved as: {output_file}")
